@@ -26,16 +26,18 @@
     <p class="section-sub">אותה חלוקה לכולם, מתחדשת בחצות. אתם דרום.</p>
     <div id="daily-deal" class="mt"></div>
     <div class="quiz-box mt" id="daily-quiz"></div>
+    <div class="center mt"><button class="btn btn-green" id="daily-analyze">🔬 מה אומר המנוע על החלוקה?</button></div>
+    <div id="daily-dd" class="mt"></div>
   </div>
 </section>
 
 <section class="section alt">
   <div class="container">
-    <h2 class="section-title">🎲 מחולל חלוקות</h2>
-    <p class="section-sub">לחלק שולחן חדש: מצוין לתרגול הערכת ידיים, או פשוט להדפיס ולשחק בבית.</p>
-    <div class="center"><button class="btn btn-gold" id="new-deal">חלוקה חדשה</button></div>
+    <h2 class="section-title">🎲 מחולל חלוקות + ניתוח Double-Dummy</h2>
+    <p class="section-sub">מחלקים שולחן, ולוחצים "נתח": מנוע ה-DDS (אותו מנוע שמשמש תוכנות ברידג' מקצועיות) מחשב כמה לקיחות ניתן לקחת בכל חוזה ומהו חוזה הפר, ישירות בדפדפן שלכם.</p>
+    <div class="center btn-row" style="justify-content:center"><button class="btn btn-gold" id="new-deal">חלוקה חדשה</button> <button class="btn btn-green" id="analyze-deal">🔬 נתח את החלוקה</button></div>
     <div id="deal-area" class="mt"></div>
-    <div class="notice mt">💡 בגרסה הבאה: טבלת Double-Dummy לכל חלוקה (כמה לקיחות ניתן לקחת בכל חוזה) עם מנוע ניתוח בדפדפן. <a href="../learn/index.html">בינתיים, למדו את היסודות</a>.</div>
+    <div id="dd-area" class="mt"></div>
   </div>
 </section>
 
@@ -43,11 +45,35 @@
 <script src="../js/bridge.js"></script>
 <script src="../js/quiz.js"></script>
 <script src="../js/tools.js"></script>
+<script src="../js/analyze.js"></script>
 <script>
 Tools.dailyChallenge(document.getElementById('daily-deal'),'daily-quiz');
 var area=document.getElementById('deal-area');
-Tools.newRandomDeal(area);
-document.getElementById('new-deal').addEventListener('click',function(){Tools.newRandomDeal(area);});
+var ddArea=document.getElementById('dd-area');
+var currentDeal=Tools.newRandomDeal(area);
+document.getElementById('new-deal').addEventListener('click',function(){
+  currentDeal=Tools.newRandomDeal(area);
+  ddArea.innerHTML='';
+});
+document.getElementById('analyze-deal').addEventListener('click',function(){
+  ddArea.innerHTML='<div class="dd-loading">⏳ המנוע מחשב... (שניה-שתיים)</div>';
+  Analyze.call({op:'ddtable', pbn:Analyze.dealToPbn(currentDeal), dealer:0, vul:0}, function(res){
+    if(!res.ok){ ddArea.innerHTML='<div class="notice">שגיאת מנוע: '+res.error+'</div>'; return; }
+    Analyze.renderDDTable(res.result, ddArea);
+    ddArea.insertAdjacentHTML('beforeend','<div class="dd-note">💡 '+Analyze.explainBeginner(res.result)+'</div>');
+    ddArea.insertAdjacentHTML('beforeend','<div class="dd-note">🎓 <strong>לקוראים מתקדמים:</strong> הטבלה מציגה תוצאות Double-Dummy: מספר הלקיחות המרבי לכל מכריז בכל שליט, בהנחת משחק מושלם וידיעת כל הקלפים. 7+ לקיחות (מודגש בירוק) = חוזה ברמה 1 לפחות ניתן לביצוע. השוו את ההכרזה שלכם לטבלה: הגעתם לחוזה האופטימלי?</div>');
+  });
+});
+document.getElementById('daily-analyze').addEventListener('click',function(){
+  var dd=document.getElementById('daily-dd');
+  dd.innerHTML='<div class="dd-loading">⏳ המנוע מחשב...</div>';
+  var dailyDeal=Tools.seededDeal(Tools.mulberry32(Tools.dailySeed()));
+  Analyze.call({op:'ddtable', pbn:Analyze.dealToPbn(dailyDeal), dealer:2, vul:0}, function(res){
+    if(!res.ok){ dd.innerHTML='<div class="notice">שגיאת מנוע: '+res.error+'</div>'; return; }
+    Analyze.renderDDTable(res.result, dd);
+    dd.insertAdjacentHTML('beforeend','<div class="dd-note">💡 '+Analyze.explainBeginner(res.result)+'</div>');
+  });
+});
 </script>
 <script src="../js/include.js" data-root="../"></script>
 </body>

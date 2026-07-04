@@ -166,6 +166,17 @@ h1{font-size:2.4rem}h2{font-size:1.8rem}h3{font-size:1.3rem}
 .deal-pts{color:var(--ink-soft);font-weight:400;font-size:.9rem}
 .deal-seat .hand{margin:0 auto}
 
+/* DD analysis */
+.dd-table{width:100%;max-width:520px;margin:18px auto 0;border-collapse:collapse;background:#fff;box-shadow:var(--shadow-sm);border-radius:10px;overflow:hidden}
+.dd-table th,.dd-table td{padding:10px 12px;text-align:center;border:1px solid var(--cream-dark);font-size:1rem}
+.dd-table thead th{background:var(--green);color:#fff;font-weight:700}
+.dd-table .dd-strain{font-weight:800;text-align:right;background:var(--cream);white-space:nowrap}
+.dd-table .dd-make{background:#E8F5E9;font-weight:800;color:#1B5E20}
+.dd-par{text-align:center;margin-top:14px;font-size:1.05rem}
+.dd-par-score{color:var(--ink-soft)}
+.dd-note{max-width:640px;margin:14px auto 0;background:var(--cream);border-right:4px solid var(--gold);border-radius:8px;padding:14px 18px;font-size:.98rem}
+.dd-loading{text-align:center;color:var(--ink-soft);padding:12px}
+
 /* Glossary */
 .glossary dt{font-weight:800;color:var(--green-dark);margin-top:18px;font-size:1.1rem}
 .glossary dd{margin:4px 0 0;color:var(--ink-soft)}
