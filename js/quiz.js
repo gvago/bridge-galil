@@ -20,7 +20,7 @@ var Quiz = (function(){
       html += '</div>';
       html += '<div class="quiz-explain" id="qz-explain"></div>';
       html += '<div class="quiz-next"><button class="btn btn-green" id="qz-next" style="display:none">שאלה הבאה ←</button></div>';
-      html += '<div class="quiz-score" id="qz-score">ניקוד: '+score+' מתוך '+(total-1)+'</div>';
+      html += '<div class="quiz-score" id="qz-score"'+(total<=1?' style="display:none"':'')+'>ניקוד: '+score+' מתוך '+(total-1)+'</div>';
       box.innerHTML = html;
       if(current.handStr){
         Bridge.renderHand(Bridge.parseHand(current.handStr), document.getElementById('qz-hand'));
@@ -42,6 +42,7 @@ var Quiz = (function(){
       ex.classList.add('show');
       document.getElementById('qz-next').style.display='inline-block';
       document.getElementById('qz-score').textContent = 'ניקוד: '+score+' מתוך '+total;
+      document.getElementById('qz-score').style.display='';
     }
     render();
   }
