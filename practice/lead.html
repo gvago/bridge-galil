@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>תרגול הובלת פתיחה עם מנוע ניתוח | ברידג' גליל</title>
+<meta name="description" content="תרגיל הובלת פתיחה אינטראקטיבי: מקבלים יד וחוזה אמיתי, בוחרים קלף הובלה, ומנוע Double-Dummy מדרג את הבחירה מול ההובלה המיטבית. חינם, בעברית.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=Assistant:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/main.css">
+<style>
+.lead-cards{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;direction:ltr;margin-top:8px}
+.lead-card{min-width:56px;min-height:52px;padding:10px 12px;border:2px solid var(--cream-dark);border-radius:10px;background:#fff;font-size:1.2rem;font-weight:800;cursor:pointer;transition:all .15s}
+.lead-card:hover:not(:disabled){border-color:var(--green);transform:translateY(-2px)}
+.lead-card.best{border-color:#2E7D32;background:#E8F5E9}
+.lead-card.picked-bad{border-color:var(--card-red);background:#FDECEA}
+.lead-card:disabled{cursor:default;opacity:.85}
+.contract-line{text-align:center;font-size:1.2rem;margin:14px 0}
+.contract-line b{color:var(--green-dark);font-size:1.4rem}
+.adv-table{width:100%;max-width:420px;margin:12px auto 0;border-collapse:collapse}
+.adv-table th,.adv-table td{border:1px solid var(--cream-dark);padding:7px 12px;text-align:center}
+.adv-table th{background:var(--cream)}
+</style>
+</head>
+<body data-page="practice">
+<header class="site-header"></header>
+
+<section class="hero">
+  <div class="container">
+    <span class="badge">🔬 מגובה מנוע ניתוח</span>
+    <h1>בחר את קלף ההובלה</h1>
+    <p class="lead">אתם המגן שמוביל נגד חוזה אמיתי. בחרו קלף, ומנוע ה-Double-Dummy ידרג את הבחירה שלכם מול ההובלה המיטבית: כמה לקיחות כל קלף שווה להגנה.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="quiz-box" id="lead-box">
+      <div class="dd-loading">⏳ המנוע מכין חלוקה וחוזה... (שניה-שתיים)</div>
+    </div>
+    <div class="dd-note mt">💡 <strong>איך לחשוב לפני שבוחרים?</strong> שלוש שאלות של מוביל טוב: (1) יש לי רצף (KQJ, QJT)? הובלת ראש רצף בטוחה. (2) לשותף יש סדרה שהכריז? לרוב נכון להוביל אותה. (3) נגד NT מובילים מהסדרה הארוכה; נגד שליט, לפעמים עדיף קלף בודד לחיתוך. אחרי שתבחרו, השוו את ההיגיון שלכם למנוע.</div>
+  </div>
+</section>
+
+<footer class="site-footer"></footer>
+<script src="../js/bridge.js"></script>
+<script src="../js/quiz.js"></script>
+<script src="../js/tools.js"></script>
+<script src="../js/analyze.js"></script>
+<script>
+(function(){
+  var SUIT_SYM={0:'♠',1:'♥',2:'♦',3:'♣'};
+  var SUIT_KEY=['S','H','D','C'];
+  var SUIT_CLS={0:'suit-s',1:'suit-h',2:'suit-d',3:'suit-c'};
+  var STRAIN=['♠','♥','♦','♣','NT'];
+  var SEAT_HE=['צפון','מזרח','דרום','מערב'];
+  var RANK_CH={2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'T',11:'J',12:'Q',13:'K',14:'A'};
+  var RANK_NUM={'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'T':10,'J':11,'Q':12,'K':13,'A':14};
+  var box=document.getElementById('lead-box');
+  var state=null;
+
+  function newBoard(){
+    box.innerHTML='<div class="dd-loading">⏳ המנוע מכין חלוקה וחוזה...</div>';
+    var deal=Tools.seededDeal(Tools.mulberry32((Math.random()*2**31)|0));
+    var pbn=Analyze.dealToPbn(deal);
+    Analyze.call({op:'ddtable', pbn:pbn, dealer:0, vul:0}, function(res){
+      if(!res.ok){ box.innerHTML='<div class="notice">שגיאת מנוע: '+res.error+'. <a href="#" onclick="location.reload();return false">רעננו את העמוד</a>.</div>'; return; }
+      // בחר חוזה: השליט עם מירב הלקיחות לזוג כלשהו (עדיפות NT בשוויון)
+      var best=null;
+      [4,0,1,2,3].forEach(function(st){
+        var row=res.result.table[st];
+        [[0,2],[1,3]].forEach(function(pair){
+          var seat=row[pair[0]]>=row[pair[1]]?pair[0]:pair[1];
+          if(row[seat]>=7 && (!best || row[seat]>best.tricks)) best={strain:st,declarer:seat,tricks:row[seat]};
+        });
+      });
+      if(!best){ newBoard(); return; } // חלוקה בלי חוזה בר-ביצוע, נדיר: הגרל שוב
+      var leader=(best.declarer+1)%4;
+      state={deal:deal,pbn:pbn,contract:best,leader:leader};
+      Analyze.call({op:'solve', deal:{trump:best.strain,first:leader,currentTrickSuit:[],currentTrickRank:[],remainCards:pbn}}, function(r2){
+        if(!r2.ok){ box.innerHTML='<div class="notice">שגיאת מנוע: '+r2.error+'</div>'; return; }
+        state.ft=r2.result;
+        render();
+      });
+    });
+  }
+
+  function cardTricks(suit,rank){
+    // מצא את הניקוד של קלף: ישיר או דרך equals bitmask
+    var ft=state.ft;
+    for(var i=0;i<ft.cards;i++){
+      if(ft.suit[i]===suit && (ft.rank[i]===rank || (ft.equals[i] & (1<<rank)))) return ft.score[i];
+    }
+    return null;
+  }
+
+  function render(){
+    var c=state.contract, hand=state.deal[['N','E','S','W'][state.leader]];
+    var level=c.tricks-6;
+    var html='<div class="contract-line">החוזה: <b><span dir="ltr">'+level+STRAIN[c.strain]+'</span></b> על ידי <b>'+SEAT_HE[c.declarer]+'</b> · אתם <b>'+SEAT_HE[state.leader]+'</b>, וההובלה שלכם</div>';
+    html+='<div class="quiz-q">איזה קלף תובילו?</div>';
+    [0,1,2,3].forEach(function(s){
+      var cards=hand[SUIT_KEY[s]];
+      if(!cards.length) return;
+      html+='<div class="lead-cards">';
+      cards.forEach(function(r){
+        html+='<button class="lead-card '+SUIT_CLS[s]+'" data-s="'+s+'" data-r="'+RANK_NUM[r]+'">'+SUIT_SYM[s]+r+'</button>';
+      });
+      html+='</div>';
+    });
+    html+='<div class="quiz-explain" id="lead-explain"></div>';
+    html+='<div class="quiz-next"><button class="btn btn-green" id="lead-next" style="display:none">יד חדשה ←</button></div>';
+    box.innerHTML=html;
+    box.querySelectorAll('.lead-card').forEach(function(btn){
+      btn.addEventListener('click',function(){pick(parseInt(btn.dataset.s,10),parseInt(btn.dataset.r,10));});
+    });
+    document.getElementById('lead-next').addEventListener('click',newBoard);
+  }
+
+  function pick(s,r){
+    var ft=state.ft;
+    var bestScore=Math.max.apply(null,ft.score);
+    var mine=cardTricks(s,r);
+    box.querySelectorAll('.lead-card').forEach(function(btn){
+      btn.disabled=true;
+      var bs=parseInt(btn.dataset.s,10), br=parseInt(btn.dataset.r,10);
+      var t=cardTricks(bs,br);
+      if(t===bestScore) btn.classList.add('best');
+      if(bs===s&&br===r&&mine<bestScore) btn.classList.add('picked-bad');
+    });
+    var ex=document.getElementById('lead-explain');
+    var head = mine===bestScore
+      ? '<strong>מצוין! זו הובלה מיטבית.</strong> '
+      : '<strong>ההובלה שלך שווה '+mine+' לקיחות להגנה; המיטבית שווה '+bestScore+'.</strong> ';
+    var body='💡 <u>למתחילים:</u> המספר ליד כל קלף אומר כמה לקיחות ההגנה תיקח במשחק מושלם אחרי ההובלה הזו. הפרש של לקיחה אחת יכול להיות ההבדל בין הפלת החוזה לביצועו.';
+    // מצב אנליטי: טבלת כל הקלפים
+    var rows='';
+    for(var i=0;i<ft.cards;i++){
+      rows+='<tr><td><span dir="ltr" class="'+SUIT_CLS[ft.suit[i]]+'">'+SUIT_SYM[ft.suit[i]]+RANK_CH[ft.rank[i]]+'</span></td><td>'+ft.score[i]+'</td></tr>';
+    }
+    var adv='<details class="mt"><summary style="cursor:pointer;font-weight:700">🎓 ניתוח מלא: כל הובלה אפשרית ושוויה</summary><table class="adv-table"><thead><tr><th>הובלה</th><th>לקיחות להגנה</th></tr></thead><tbody>'+rows+'</tbody></table><p style="margin-top:10px;font-size:.95rem">קלפים שלא מופיעים שקולים לקלף המופיע מאותה סדרה (סימון equals של המנוע). המספרים בהנחת משחק מושלם משני הצדדים.</p></details>';
+    ex.innerHTML=head+body+adv;
+    ex.classList.add('show');
+    document.getElementById('lead-next').style.display='inline-block';
+  }
+
+  newBoard();
+})();
+</script>
+<script src="../js/include.js" data-root="../"></script>
+</body>
+</html>
