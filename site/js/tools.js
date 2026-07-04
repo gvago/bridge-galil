@@ -38,7 +38,9 @@ var Tools = (function(){
     });
   }
   function newRandomDeal(el){
-    renderDeal(seededDeal(mulberry32((Math.random()*2**31)|0)),el);
+    var d=seededDeal(mulberry32((Math.random()*2**31)|0));
+    renderDeal(d,el);
+    return d;
   }
   function dailySeed(){
     var d=new Date();

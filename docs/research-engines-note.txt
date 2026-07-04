@@ -1,0 +1,6 @@
+DDS integration verified live 2026-07-04:
+- bridge-dds 1.4.0 vendored (Apache-2.0) at site/js/vendor/dds/ (wasm embedded in dds.js, single-file)
+- import path patched: ./lib/dds -> ./dds.js
+- runs in module Web Worker (site/js/dds-worker.js), UI layer site/js/analyze.js
+- CalcDDTablePBN ~166ms cold in node; sub-second in browser
+- verified outputs: known deal resTable [[5,8,5,8],[6,6,6,6],[5,7,5,7],[7,5,7,5],[6,6,6,6]] par -110 2S-EW
