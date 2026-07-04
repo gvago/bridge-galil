@@ -133,9 +133,10 @@
   }
   function drawTrick(){
     var el=document.getElementById('trick');
-    el.innerHTML=st.trick.map(function(c){
+    el.innerHTML='<span style="color:var(--ink-soft);font-size:.9rem">לקיחה '+Math.min(st.trickNum,13)+'/13</span>'+
+      st.trick.map(function(c){
       return '<div class="trick-card"><span dir="ltr" class="'+SUIT_CLS[c.s]+'">'+SUIT_SYM[c.s]+RANK_CH[c.r]+'</span><small>'+SEAT_HE[c.seat]+'</small></div>';
-    }).join('')||'<span style="color:var(--ink-soft);font-size:.9rem">לקיחה '+st.trickNum+' מתוך 13</span>';
+    }).join('');
   }
 
   function solvePos(cb){
