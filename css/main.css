@@ -136,6 +136,19 @@ h1{font-size:2.4rem}h2{font-size:1.8rem}h3{font-size:1.3rem}
 .site-footer a:hover{color:var(--gold-light)}
 .footer-bottom{text-align:center;margin-top:36px;padding-top:18px;border-top:1px solid rgba(255,255,255,.12);font-size:.9rem}
 
+/* Deal grid */
+.deal-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:640px;margin:0 auto}
+.deal-seat{text-align:center}
+.deal-N{grid-column:1/3}
+.deal-S{grid-column:1/3}
+.deal-name{font-weight:800;color:var(--green-dark);margin-bottom:6px}
+.deal-pts{color:var(--ink-soft);font-weight:400;font-size:.9rem}
+.deal-seat .hand{margin:0 auto}
+
+/* Glossary */
+.glossary dt{font-weight:800;color:var(--green-dark);margin-top:18px;font-size:1.1rem}
+.glossary dd{margin:4px 0 0;color:var(--ink-soft)}
+
 /* Utility */
 .center{text-align:center}
 .mt{margin-top:28px}

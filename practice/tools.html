@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מחולל חלוקות ואתגר יומי | ברידג' גליל</title>
+<meta name="description" content="מחולל חלוקות ברידג' חינם: כל השולחן עם ספירת נקודות לכל יד, ואתגר הכרזה יומי שמתחדש כל בוקר. כלי תרגול מבית ברידג' גליל.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=Assistant:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/main.css">
+</head>
+<body data-page="practice">
+<header class="site-header"></header>
+
+<section class="hero">
+  <div class="container">
+    <span class="badge">כלים</span>
+    <h1>מחולל חלוקות ואתגר יומי</h1>
+    <p class="lead">חלוקה מלאה של כל השולחן בלחיצה, עם ספירת נקודות לכל יד. ובכל יום: אתגר הכרזה חדש, זהה לכל הגולשים. השוו תשובות עם חברים.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">🗓️ האתגר היומי</h2>
+    <p class="section-sub">אותה חלוקה לכולם, מתחדשת בחצות. אתם דרום.</p>
+    <div id="daily-deal" class="mt"></div>
+    <div class="quiz-box mt" id="daily-quiz"></div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="container">
+    <h2 class="section-title">🎲 מחולל חלוקות</h2>
+    <p class="section-sub">לחלק שולחן חדש: מצוין לתרגול הערכת ידיים, או פשוט להדפיס ולשחק בבית.</p>
+    <div class="center"><button class="btn btn-gold" id="new-deal">חלוקה חדשה</button></div>
+    <div id="deal-area" class="mt"></div>
+    <div class="notice mt">💡 בגרסה הבאה: טבלת Double-Dummy לכל חלוקה (כמה לקיחות ניתן לקחת בכל חוזה) עם מנוע ניתוח בדפדפן. <a href="../learn/index.html">בינתיים, למדו את היסודות</a>.</div>
+  </div>
+</section>
+
+<footer class="site-footer"></footer>
+<script src="../js/bridge.js"></script>
+<script src="../js/quiz.js"></script>
+<script src="../js/tools.js"></script>
+<script>
+Tools.dailyChallenge(document.getElementById('daily-deal'),'daily-quiz');
+var area=document.getElementById('deal-area');
+Tools.newRandomDeal(area);
+document.getElementById('new-deal').addEventListener('click',function(){Tools.newRandomDeal(area);});
+</script>
+<script src="../js/include.js" data-root="../"></script>
+</body>
+</html>
