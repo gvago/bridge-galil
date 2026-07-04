@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url><loc>https://bridgegalil.example/index.html</loc><priority>1.0</priority></url>
+<url><loc>https://bridgegalil.example/courses.html</loc><priority>0.9</priority></url>
+<url><loc>https://bridgegalil.example/about.html</loc><priority>0.8</priority></url>
+<url><loc>https://bridgegalil.example/contact.html</loc><priority>0.8</priority></url>
+<url><loc>https://bridgegalil.example/learn/index.html</loc><priority>0.9</priority></url>
+<url><loc>https://bridgegalil.example/learn/lessons/basics-rules.html</loc><priority>0.7</priority></url>
+<url><loc>https://bridgegalil.example/learn/lessons/basics-points.html</loc><priority>0.7</priority></url>
+<url><loc>https://bridgegalil.example/learn/lessons/basics-opening.html</loc><priority>0.7</priority></url>
+<url><loc>https://bridgegalil.example/learn/lessons/basics-play.html</loc><priority>0.7</priority></url>
+<url><loc>https://bridgegalil.example/learn/articles/stayman.html</loc><priority>0.6</priority></url>
+<url><loc>https://bridgegalil.example/learn/articles/transfers.html</loc><priority>0.6</priority></url>
+<url><loc>https://bridgegalil.example/learn/articles/signals.html</loc><priority>0.6</priority></url>
+<url><loc>https://bridgegalil.example/practice/index.html</loc><priority>0.9</priority></url>
+<url><loc>https://bridgegalil.example/practice/bidding.html</loc><priority>0.7</priority></url>
+<url><loc>https://bridgegalil.example/practice/hcp.html</loc><priority>0.7</priority></url>
+</urlset>
