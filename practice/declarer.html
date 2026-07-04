@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>אתגר הכרוז: מצא את הקלף הנכון | ברידג' גליל</title>
+<meta name="description" content="תרגול משחק יד לכרוז: ההובלה נעשתה, אתם משחקים מהדומם. מנוע Double-Dummy מדרג כל קלף אפשרי ומראה כמה לקיחות הוא שווה. חינם, בעברית.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=Assistant:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/main.css">
+<style>
+.lead-cards{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;direction:ltr;margin-top:8px}
+.lead-card{min-width:56px;min-height:52px;padding:10px 12px;border:2px solid var(--cream-dark);border-radius:10px;background:#fff;font-size:1.2rem;font-weight:800;cursor:pointer;transition:all .15s}
+.lead-card:hover:not(:disabled){border-color:var(--green);transform:translateY(-2px)}
+.lead-card.best{border-color:#2E7D32;background:#E8F5E9}
+.lead-card.picked-bad{border-color:var(--card-red);background:#FDECEA}
+.lead-card:disabled{cursor:default;opacity:.85}
+.contract-line{text-align:center;font-size:1.15rem;margin:14px 0}
+.contract-line b{color:var(--green-dark)}
+.table-view{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:620px;margin:0 auto 6px}
+.table-view .seat{text-align:center}
+.table-view .seat-name{font-weight:800;color:var(--green-dark);margin-bottom:6px}
+.led-card{display:inline-block;border:2px solid var(--gold);border-radius:10px;background:#FFF8E1;padding:8px 14px;font-size:1.3rem;font-weight:800;direction:ltr}
+.adv-table{width:100%;max-width:420px;margin:12px auto 0;border-collapse:collapse}
+.adv-table th,.adv-table td{border:1px solid var(--cream-dark);padding:7px 12px;text-align:center}
+.adv-table th{background:var(--cream)}
+@media(max-width:640px){.table-view{grid-template-columns:1fr}}
+</style>
+</head>
+<body data-page="practice">
+<header class="site-header"></header>
+
+<section class="hero">
+  <div class="container">
+    <span class="badge">🔬 מגובה מנוע ניתוח</span>
+    <h1>אתגר הכרוז</h1>
+    <p class="lead">אתם הכרוז. ההובלה כבר על השולחן, ועכשיו תורכם לשחק מהדומם. אתם רואים את שתי הידיים שלכם, בדיוק כמו בשולחן אמיתי. בחרו קלף, והמנוע יגיד כמה לקיחות הבחירה שווה.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="quiz-box" id="dec-box">
+      <div class="dd-loading">⏳ המנוע בונה חלוקה, בוחר חוזה ומוביל נגדכם...</div>
+    </div>
+    <div class="dd-note mt">💡 <strong>איך חושבים כמו כרוז ברגע הזה?</strong> לפני שנוגעים בקלף: (1) ספרו מנצחים מיידיים בשתי הידיים. (2) זהו מאיפה יגיעו הלקיחות החסרות. (3) שאלו: הלקיחה הזו היא הזדמנות לעקיפה, או שעדיף לזכות בזול ולשמור כניסות? המנוע ידרג את הבחירה, אתם תבינו את הסיבה.</div>
+  </div>
+</section>
+
+<footer class="site-footer"></footer>
+<script src="../js/bridge.js"></script>
+<script src="../js/quiz.js"></script>
+<script src="../js/tools.js"></script>
+<script src="../js/analyze.js"></script>
+<script>
+(function(){
+  var SUIT_SYM={0:'♠',1:'♥',2:'♦',3:'♣'};
+  var SUIT_KEY=['S','H','D','C'];
+  var SUIT_CLS={0:'suit-s',1:'suit-h',2:'suit-d',3:'suit-c'};
+  var STRAIN=['♠','♥','♦','♣','NT'];
+  var SEAT_HE=['צפון','מזרח','דרום','מערב'];
+  var SEATS=['N','E','S','W'];
+  var RANK_CH={2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'T',11:'J',12:'Q',13:'K',14:'A'};
+  var RANK_NUM={'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'T':10,'J':11,'Q':12,'K':13,'A':14};
+  var box=document.getElementById('dec-box');
+  var state=null;
+
+  function removeCard(deal,seat,s,r){
+    var h=JSON.parse(JSON.stringify(deal[seat]));
+    h[SUIT_KEY[s]]=h[SUIT_KEY[s]].filter(function(x){return RANK_NUM[x]!==r;});
+    var d2={};
+    SEATS.forEach(function(p){d2[p]= p===seat? h : deal[p];});
+    return d2;
+  }
+
+  function newBoard(){
+    box.innerHTML='<div class="dd-loading">⏳ המנוע בונה חלוקה, בוחר חוזה ומוביל נגדכם...</div>';
+    var deal=Tools.seededDeal(Tools.mulberry32((Math.random()*2**31)|0));
+    var pbn=Analyze.dealToPbn(deal);
+    Analyze.call({op:'ddtable', pbn:pbn, dealer:0, vul:0}, function(res){
+      if(!res.ok){ fail(res.error); return; }
+      var best=null;
+      [4,0,1,2,3].forEach(function(st){
+        var row=res.result.table[st];
+        [[0,2],[1,3]].forEach(function(pair){
+          var seat=row[pair[0]]>=row[pair[1]]?pair[0]:pair[1];
+          if(row[seat]>=8 && (!best||row[seat]>best.tricks)) best={strain:st,declarer:seat,tricks:row[seat]};
+        });
+      });
+      if(!best){ newBoard(); return; }
+      var leader=(best.declarer+1)%4;
+      // הובלה מיטבית של ההגנה
+      Analyze.call({op:'solve', deal:{trump:best.strain,first:leader,currentTrickSuit:[],currentTrickRank:[],remainCards:pbn}}, function(r1){
+        if(!r1.ok){ fail(r1.error); return; }
+        var ft=r1.result, bi=0;
+        for(var i=1;i<ft.cards;i++) if(ft.score[i]>ft.score[bi]) bi=i;
+        var lead={s:ft.suit[bi], r:ft.rank[bi]};
+        // הסר את קלף ההובלה ופתור מנקודת מבט הצד המשחק הבא (הדומם, בשליטת הכרוז)
+        var deal2=removeCard(deal,SEATS[leader],lead.s,lead.r);
+        var pbn2=Analyze.dealToPbn(deal2);
+        Analyze.call({op:'solve', deal:{trump:best.strain,first:leader,currentTrickSuit:[lead.s],currentTrickRank:[lead.r],remainCards:pbn2}}, function(r2){
+          if(!r2.ok){ fail(r2.error); return; }
+          state={deal:deal,contract:best,leader:leader,lead:lead,ft:r2.result,
+                 dummy:(leader+1)%4};
+          render();
+        });
+      });
+    });
+  }
+  function fail(e){ box.innerHTML='<div class="notice">שגיאת מנוע: '+e+'. <a href="#" onclick="location.reload();return false">רעננו את העמוד</a>.</div>'; }
+
+  function cardTricks(s,r){
+    var ft=state.ft;
+    for(var i=0;i<ft.cards;i++){
+      if(ft.suit[i]===s && (ft.rank[i]===r || (ft.equals[i]&(1<<r)))) return ft.score[i];
+    }
+    return null;
+  }
+
+  function handHtml(seat){
+    var h=state.deal[SEATS[seat]];
+    var html='<div class="hand">';
+    [0,1,2,3].forEach(function(s){
+      html+='<div class="suit-row"><span class="suit-sym '+SUIT_CLS[s]+'">'+SUIT_SYM[s]+'</span><span class="'+SUIT_CLS[s]+'">'+(h[SUIT_KEY[s]].length?h[SUIT_KEY[s]].join(' '):'—')+'</span></div>';
+    });
+    return html+'</div>';
+  }
+
+  function render(){
+    var c=state.contract, level=c.tricks-6;
+    var dummyHand=state.deal[SEATS[state.dummy]];
+    var html='<div class="contract-line">החוזה: <b><span dir="ltr">'+level+STRAIN[c.strain]+'</span></b>, אתם הכרוז (<b>'+SEAT_HE[c.declarer]+'</b>). '+
+      SEAT_HE[state.leader]+' הוביל: <span class="led-card '+SUIT_CLS[state.lead.s]+'">'+SUIT_SYM[state.lead.s]+RANK_CH[state.lead.r]+'</span></div>';
+    html+='<div class="table-view">'+
+      '<div class="seat"><div class="seat-name">הדומם ('+SEAT_HE[state.dummy]+') · תורכם לשחק מכאן</div>'+handHtml(state.dummy)+'</div>'+
+      '<div class="seat"><div class="seat-name">היד שלכם ('+SEAT_HE[c.declarer]+')</div>'+handHtml(c.declarer)+'</div>'+
+      '</div>';
+    html+='<div class="quiz-q">איזה קלף תשחקו מהדומם?</div>';
+    // הקלפים החוקיים: הסדרה שהובלה אם יש, אחרת הכל. המנוע כבר החזיר רק חוקיים: נבנה מהם.
+    var legal={};
+    var ft=state.ft;
+    for(var i=0;i<ft.cards;i++){
+      var key=ft.suit[i];
+      if(!legal[key])legal[key]=[];
+      legal[key].push(ft.rank[i]);
+      for(var r=2;r<=14;r++) if(ft.equals[i]&(1<<r)) legal[key].push(r);
+    }
+    [0,1,2,3].forEach(function(s){
+      if(!legal[s]) return;
+      // הצג את כל קלפי הדומם בסדרה החוקית, לא רק נציגי המנוע
+      var cards=dummyHand[SUIT_KEY[s]];
+      html+='<div class="lead-cards">';
+      cards.forEach(function(rch){
+        html+='<button class="lead-card '+SUIT_CLS[s]+'" data-s="'+s+'" data-r="'+RANK_NUM[rch]+'">'+SUIT_SYM[s]+rch+'</button>';
+      });
+      html+='</div>';
+    });
+    html+='<div class="quiz-explain" id="dec-explain"></div>';
+    html+='<div class="quiz-next"><button class="btn btn-green" id="dec-next" style="display:none">יד חדשה ←</button></div>';
+    box.innerHTML=html;
+    box.querySelectorAll('.lead-card').forEach(function(btn){
+      btn.addEventListener('click',function(){pick(parseInt(btn.dataset.s,10),parseInt(btn.dataset.r,10));});
+    });
+    document.getElementById('dec-next').addEventListener('click',newBoard);
+  }
+
+  function pick(s,r){
+    var ft=state.ft;
+    var bestScore=Math.max.apply(null,ft.score);
+    var mine=cardTricks(s,r);
+    var need=state.contract.tricks;
+    box.querySelectorAll('.lead-card').forEach(function(btn){
+      btn.disabled=true;
+      var t=cardTricks(parseInt(btn.dataset.s,10),parseInt(btn.dataset.r,10));
+      if(t===bestScore) btn.classList.add('best');
+      if(parseInt(btn.dataset.s,10)===s&&parseInt(btn.dataset.r,10)===r&&mine<bestScore) btn.classList.add('picked-bad');
+    });
+    var ex=document.getElementById('dec-explain');
+    var head = mine===bestScore
+      ? '<strong>מדויק! מהקלף הזה תגיעו ל-'+mine+' לקיחות, המקסימום האפשרי.</strong> '
+      : '<strong>הקלף הזה מוביל ל-'+mine+' לקיחות; הבחירה המיטבית שווה '+bestScore+'.</strong> ';
+    var contractNote = bestScore>=need
+      ? 'החוזה ('+(need-6)+' רמות = '+need+' לקיחות) ניתן לביצוע מכאן, אבל רק במשחק מדויק.'
+      : 'שימו לב: אפילו במשחק מושלם החוזה ייפול. המשימה עכשיו: למזער את הנפילה.';
+    var body='💡 <u>למתחילים:</u> '+contractNote+' המספר של כל קלף = סך הלקיחות שהצד שלכם ייקח במשחק מושלם אחרי הקלף הזה.';
+    var rows='';
+    for(var i=0;i<ft.cards;i++){
+      rows+='<tr><td><span dir="ltr" class="'+SUIT_CLS[ft.suit[i]]+'">'+SUIT_SYM[ft.suit[i]]+RANK_CH[ft.rank[i]]+'</span></td><td>'+ft.score[i]+'</td></tr>';
+    }
+    var adv='<details class="mt"><summary style="cursor:pointer;font-weight:700">🎓 ניתוח מלא: כל קלף חוקי מהדומם ושוויו</summary><table class="adv-table"><thead><tr><th>קלף</th><th>לקיחות לכרוז</th></tr></thead><tbody>'+rows+'</tbody></table><p style="margin-top:10px;font-size:.95rem">קלפים שקולים (למשל שני קלפים צמודים) מיוצגים על ידי אחד מהם. ההנחה: משחק מושלם של כולם מכאן והלאה.</p></details>';
+    ex.innerHTML=head+body+adv;
+    ex.classList.add('show');
+    document.getElementById('dec-next').style.display='inline-block';
+  }
+
+  newBoard();
+})();
+</script>
+<script src="../js/include.js" data-root="../"></script>
+</body>
+</html>
