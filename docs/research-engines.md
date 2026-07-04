@@ -1,30 +1,46 @@
-# Engine Audit — OSS Bridge Engines (verified via GitHub API, July 2026)
+# Engine Audit — סיווג סופי (מקורות: GitHub API, יולי 2026. אפס ניחושים)
 
-## Matrix
+## 4 קטגוריות
 
-| Repo | What | Lang | License | Activity | Browser? |
-|---|---|---|---|---|---|
-| dds-bridge/dds | Canonical double-dummy solver | C++ | Apache-2.0 | Active (pushed 07/2026) | Via WASM wrapper |
-| bookchris/bridge-dds-js | WASM+TS wrapper of dds, npm `bridge-dds` 1.4.0 | TS | Apache-2.0 | Low but functional | YES, native WASM |
-| lorserker/ben | ML bidding+play engine | Python | GPL-3.0 | Active | No (TF server) |
-| dominicprice/endplay | Deal gen + analysis toolkit (wraps DDS) | Python | MIT | Maintained | No |
-| macroxue/bridge-solver | Alt DD solver | C++ | GPL-2.0 | Low | No WASM |
-| mikea/bridgitte | DD solver | Rust | GPL-3.0 | Hobby, dead | Unproven |
-| oriyanh/Bridge-AI | Student project | Python | NONE | Dead 2020 | No |
-| wpeisert/python-bridge-game-library | Game lib | Python | Unclear | Dead | No |
-| jyang001/Bridge-Card-Game | Sim game | Python | NONE | Dead | No |
-| jfklorenz/Bridge-Package | JS primitives | JS | MIT | Dead, incomplete | Trivial |
-| holgus103/DDBP | DD autoencoder research | Python | NONE | Dead 2018 | No |
-| Ark223/BGA | 404, repo gone | — | — | — | — |
+### 1. שילוב מיידי
+| Repo | License | למה |
+|---|---|---|
+| bookchris/bridge-dds-js (npm `bridge-dds` 1.4.0) | Apache-2.0 | DD solver אמיתי בדפדפן (dds מקומפל ל-WASM). API מאומת מה-README: `SolveBoardPBN`, `CalcDDTablePBN`, `AnalysePlayPBN`, `DealerPar` + דוגמת Web Worker. סיכון יחיד: מתחזק בודד → מגודר ע"י vendoring של ה-.wasm |
+| dominicprice/endplay | MIT | חילול ידיים עם אילוצים + PBN + ניתוח DD. שימוש offline לייצור תוכן סטטי (חבילות ידיים לתרגילים). לא נדרש בדפדפן |
 
-## Tier list
-- **Integrate now:** bridge-dds-js (Apache-2.0 WASM DDS in browser; vendor the .wasm to hedge single-maintainer risk).
-- **Later:** dds (server-side), endplay (MIT, deal generation + PBN), ben (GPL, isolate as HTTP service).
-- **Skip:** all the rest (dead / unlicensed / redundant / gone).
+### 2. מתאים ל-PoC
+| Repo | License | למה |
+|---|---|---|
+| dds-bridge/dds | Apache-2.0 | ה-upstream. שימוש ישיר צד-שרת (דרך endplay) כשנפח הניתוח יעלה על הדפדפן. פעיל (push 07/2026) |
+| lorserker/ben | GPL-3.0 | ה-AI היחיד הרציני בקוד פתוח להכרזות+משחק. דורש Python+TensorFlow server. PoC כשירות HTTP מבודד (GPL לא מזהם את הקוד שלנו מאחורי network boundary) |
 
-## Phased plan
-1. **Phase 1 (client-only, fits current static site):** vendor `bridge-dds` WASM + glue, run in Web Worker. `CalcDDTablePBN` for "makeable contracts" per deal, `SolveBoardPBN` for "best card?" feedback. Pre-generate constrained deals offline with endplay, ship as static JSON/PBN.
-2. **Phase 2 (server API):** FastAPI + endplay over libdds: batch DD tables, par scores, session analysis. Same PBN contract, frontend swaps worker call for fetch. Cache by deal hash.
-3. **Phase 3 (AI):** ben as isolated GPL Docker service over HTTP: robot bidding feedback, robot table, post-mortem commentary. Hebrew explanation layer on top.
+### 3. מחקר/השראה בלבד
+| Repo | סיבה |
+|---|---|
+| macroxue/bridge-solver | GPL-2.0, אין WASM build מפורסם. השראה לאלגוריתמיקה בלבד |
+| mikea/bridgitte | GPL-3.0, hobby, לא מוכח. השראה ל-Rust→WASM אם אי פעם נרצה solver עצמאי |
+| holgus103/DDBP | ללא רישיון, מת מ-2018. הרעיון (רשת שמעריכה DD tricks) רלוונטי ל-V3 |
+| oriyanh/Bridge-AI | ללא רישיון (פרויקט סטודנטים). Minimax/MCTS כרפרנס רעיוני בלבד |
 
-License posture: browser ships only Apache-2.0/MIT. GPL stays behind network boundary.
+### 4. לא מתאים
+| Repo | סיבה |
+|---|---|
+| wpeisert/python-bridge-game-library | מת, רישוי לא ברור, 0 כוכבים |
+| jyang001/Bridge-Card-Game | מת, ללא רישיון |
+| jfklorenz/Bridge-Package | MIT אבל נטוש ולא גמור; פרימיטיבים של קלפים = פחות עבודה לכתוב לבד (וכבר כתבנו: bridge.js) |
+| Ark223/BGA | 404, לא קיים |
+
+## טבלת החלטה: מנוע ↔ use case
+
+| Use case | מנוע | איפה רץ | שלב |
+|---|---|---|---|
+| טבלת "חוזים ניתנים לביצוע" לכל חלוקה | bridge-dds-js `CalcDDTablePBN` | דפדפן (Worker) | V2 |
+| משוב "הקלף הטוב ביותר" בתרגול משחק יד | bridge-dds-js `SolveBoardPBN` | דפדפן (Worker) | V2 |
+| Par contract viewer | bridge-dds-js `DealerPar` | דפדפן | V2 |
+| חילול ידיים עם אילוצים (למשל "15-17 מאוזנת") | endplay | offline → JSON סטטי | V1.5 |
+| ניתוח סשן מלא / batch גדול | dds via endplay + FastAPI | שרת | V2.5 |
+| "מה הרובוט היה מכריז?" | ben | שרת GPL מבודד | V3 |
+| פרשנות post-mortem למשחק | ben + dds | שרת | V3 |
+| חידוני הכרזה/HCP/אתגר יומי | bridge.js שלנו | דפדפן | V1 ✅ קיים |
+
+כלל רישוי: לדפדפן נשלח רק Apache-2.0/MIT. GPL חי מאחורי HTTP בלבד.
