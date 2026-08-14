@@ -49,7 +49,7 @@ var BridgeTable = (function(){
       phase:'bid', auction:[], turn:null,
       contract:null, declarer:null, dummy:null, trump:null,
       trick:[], tricksNS:0, tricksEW:0, played:0, ledger:[],
-      mistakes:[], lastHint:null, busy:false
+      mistakes:[], lastHint:null, pauseHint:null, busy:false
     };
     T.turn=T.dealer;
     render();
@@ -67,12 +67,12 @@ var BridgeTable = (function(){
     return t;
   }
   function botBid(){
-    if(T.phase!=='bid') return;
+    if(T.phase!=='bid'||T.pauseHint) return;
     var r=Bidder.suggest(T.hands[T.turn], T.auction, T.turn);
     applyBid(r.bid, null);
   }
   function userBid(bid){
-    if(T.phase!=='bid'||T.turn!==T.userSeat||!legalBid(bid)) return;
+    if(T.phase!=='bid'||T.turn!==T.userSeat||T.pauseHint||!legalBid(bid)) return;
     /* משוב: מה המנוע היה מכריז. gradeBids=false בשיעורי קונבנציות שהמנוע לא מכיר */
     var fb=null;
     if(T.gradeBids){
@@ -86,7 +86,7 @@ var BridgeTable = (function(){
   }
   function applyBid(bid, feedback){
     T.auction.push({seat:T.turn, bid:bid});
-    if(feedback || T.turn===T.userSeat) T.lastHint=feedback;
+    if(feedback) T.pauseHint=feedback; else if(T.turn===T.userSeat) T.lastHint=null;
     if(auctionDone()){
       var contractBid=null, dbl='';
       T.auction.forEach(function(a){ if(a.bid!=='P') contractBid=a; });
@@ -104,7 +104,7 @@ var BridgeTable = (function(){
       T.phase='play';
       T.turn=(T.declarer+1)%4; /* מוביל = שמאלו של הכרוז */
       /* ponytail: הסבר חד-פעמי כשהמשתמש כרוז — מלמד את כלל שתי הידיים במקום להפתיע */
-      if(T.declarer===T.userSeat) T.lastHint={kind:'info', best:null,
+      if(T.declarer===T.userSeat) T.pauseHint={kind:'info', best:null,
         why:'אתה הכרוז! השותף פורש את הדומם ואתה מנהל את שתי הידיים — שלך ושלו. זה לב משחק הכרוז בברידג\': לתכנן את שתי הידיים כיחידה אחת. היד הפעילה מסומנת בזהב.'};
       render();
       setTimeout(nextIfBot,700);
@@ -170,7 +170,7 @@ var BridgeTable = (function(){
     });
   }
   function userPlay(card){
-    if(T.phase!=='play'||T.busy||!userControls(T.turn)) return;
+    if(T.phase!=='play'||T.busy||T.pauseHint||!userControls(T.turn)) return;
     if(legalCards(T.turn).indexOf(card)<0) return;
     T.busy=true;
     var seat=T.turn;
@@ -181,8 +181,10 @@ var BridgeTable = (function(){
       if(chosen!=null && bestScore-chosen>0){
         var bSuit=['S','H','D','C'][sol.suit[bestIdx]];
         var bRank=sol.rank[bestIdx]===10?'T':({14:'A',13:'K',12:'Q',11:'J'}[sol.rank[bestIdx]]||String(sol.rank[bestIdx]));
-        fb={kind:'play', chose:card, best:bSuit+bRank, cost:bestScore-chosen,
-            why:'הקלף '+disp(bSuit+bRank)+' היה שומר על '+bestScore+' לקיחות בקו שלך; הבחירה שלך מוותרת על '+(bestScore-chosen)+'.'};
+        fb={kind:'play', chose:card, best:bSuit+bRank, cost:bestScore-chosen, trick:T.played+1,
+            why:'במצב הזה הקלף '+disp(bSuit+bRank)+' משאיר לקו שלך '+bestScore+' לקיחות במשחק מדויק, והבחירה שלך מוותרת על '+(bestScore-chosen)+' מהן. '+
+                (bestScore-chosen>=2?'זו טעות משמעותית — שווה לעצור ולחשוב מה השתנה. ':'')+
+                'שימו לב לסדרת הקלף המומלץ: לרוב הסיבה היא שמירת כניסה, עקיפה נכונה או אי-בזבוז קלף גבוה.'};
         T.mistakes.push(fb);
       }
       T.busy=false;
@@ -194,8 +196,8 @@ var BridgeTable = (function(){
     var ix=h.indexOf(card[1]); if(ix<0) return;
     h.splice(ix,1);
     T.trick.push({seat:seat,card:card});
-    /* ponytail: רמז נשאר על המסך עד הפעולה הבאה של המשתמש — בוטים לא מוחקים אותו */
-    if(feedback || userControls(seat)) T.lastHint=feedback;
+    /* משוב = עצירת ביניים (overlay); הבוטים מחכים עד "הבנתי" */
+    if(feedback) T.pauseHint=feedback; else if(userControls(seat)) T.lastHint=null;
     if(T.trick.length===4){
       var winner=trickWinner();
       if(winner%2===0)T.tricksNS++; else T.tricksEW++;
@@ -221,7 +223,7 @@ var BridgeTable = (function(){
     return best.seat;
   }
   function nextIfBot(){
-    if(T.phase!=='play') return;
+    if(T.phase!=='play'||T.pauseHint) return;
     if(!userControls(T.turn)) botPlay();
   }
   function finish(){
@@ -286,12 +288,17 @@ var BridgeTable = (function(){
     /* קופסת הכרזות */
     if(T.phase==='bid' && T.turn===T.userSeat) html+=bidBoxHTML();
 
-    /* רמז/משוב */
-    if(T.lastHint){
-      if(T.lastHint.kind==='info') html+='<div class="tbl-hint">🃏 '+T.lastHint.why+'</div>';
-      else html+='<div class="tbl-hint">💡 אפשר היה טוב יותר: '+
-        (T.lastHint.kind==='bid'?'ההכרזה המומלצת היא '+bidHe(T.lastHint.best)+'. ':'הקלף המומלץ: '+disp(T.lastHint.best)+'. ')+
-        T.lastHint.why+'</div>';
+    /* משוב עצירה: שכבת ביניים על השולחן — המשחק מחכה ל"הבנתי" */
+    if(T.pauseHint){
+      var ph=T.pauseHint;
+      html+='<div class="tbl-overlay"><div class="tbl-overlay-box">'+
+        (ph.kind==='info' ? '<div class="ov-title">🃏 רגע חשוב</div><p>'+ph.why+'</p>'
+          : '<div class="ov-title">💡 '+(ph.kind==='bid'?'הכרזה':'לקיחה '+(ph.trick||T.played+1))+': אפשר היה טוב יותר</div>'+
+            '<p><strong>'+(ph.kind==='bid'
+              ? 'הכרזת '+bidHe(ph.chose)+'; ההכרזה המומלצת: '+bidHe(ph.best)+'.'
+              : 'שיחקת '+disp(ph.chose)+'; הקלף המומלץ: '+disp(ph.best)+'.')+'</strong></p>'+
+            '<p>'+ph.why+'</p><p class="ov-note">ההחלטה שלך נשארת — ממשיכים ממנה. הערה זו תופיע גם בסיכום.</p>')+
+        '<button class="btn btn-gold" id="ov-ok">הבנתי, ממשיכים ←</button></div></div>';
     }
 
     if(T.phase==='done') html+=doneHTML();
@@ -299,6 +306,11 @@ var BridgeTable = (function(){
     el.innerHTML=html;
 
     /* wiring */
+    var ok=document.getElementById('ov-ok');
+    if(ok) ok.addEventListener('click',function(){
+      T.pauseHint=null; render();
+      setTimeout(function(){ if(T.phase==='bid'){ if(T.turn!==T.userSeat) botBid(); } else nextIfBot(); },300);
+    });
     el.querySelectorAll('.tc.playable').forEach(function(b){
       b.addEventListener('click',function(){userPlay(b.dataset.card);});
     });
@@ -350,7 +362,7 @@ var BridgeTable = (function(){
     else {
       h+='<p>נקודות לשיפור ('+T.mistakes.length+'):</p><ul>';
       T.mistakes.forEach(function(m){
-        h+='<li>'+(m.kind==='bid'?'הכרזה: בחרת '+bidHe(m.chose)+', מומלץ '+bidHe(m.best):'משחק: בחרת '+disp(m.chose)+', מומלץ '+disp(m.best))+' — '+m.why+'</li>';
+        h+='<li>'+(m.kind==='bid'?'הכרזה: בחרת '+bidHe(m.chose)+', מומלץ '+bidHe(m.best):'לקיחה '+(m.trick||'?')+': בחרת '+disp(m.chose)+', מומלץ '+disp(m.best))+' — '+m.why+'</li>';
       });
       h+='</ul>';
     }
