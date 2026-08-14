@@ -5,7 +5,7 @@ var Course = (function(){
 
   /* ---------- מחוללי חלוקות מותנות (rejection sampling) ---------- */
   function dealUntil(cond){
-    for(var i=0;i<400;i++){
+    for(var i=0;i<5000;i++){
       var deck=[]; ['S','H','D','C'].forEach(function(s){'AKQJT98765432'.split('').forEach(function(r){deck.push(s+r);});});
       for(var k=deck.length-1;k>0;k--){var j=Math.floor(Math.random()*(k+1)),t=deck[k];deck[k]=deck[j];deck[j]=t;}
       var hands=[0,1,2,3].map(function(q){
@@ -182,5 +182,5 @@ var Course = (function(){
     next();
   }
 
-  return {PARTS:PARTS, G:G, prog:prog, markQuiz:markQuiz, markDone:markDone, findStep:findStep, runQuiz:runQuiz};
+  return {PARTS:PARTS, G:G, prog:prog, markQuiz:markQuiz, markDone:markDone, findStep:findStep, runQuiz:runQuiz, dealUntil:dealUntil};
 })();
