@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מסלול הלימוד: המורה הווירטואלי | ברידג' גליל</title>
+<meta name="description" content="מסלול לימוד ברידג' שלב-אחר-שלב: תיאוריה, חידון ותרגול מעשי בשולחן וירטואלי עם משוב חכם על כל החלטה. מבוסס על תוכנית הלימודים של נפתלי קריספיס.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=Assistant:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/main.css">
+</head>
+<body data-page="practice">
+<header class="site-header"></header>
+
+<section class="hero">
+  <div class="container">
+    <span class="badge">חדש · לומדים ומתרגלים באותו מקום</span>
+    <h1>מסלול הלימוד</h1>
+    <p class="lead">כל שלב: לומדים את הרעיון, עונים על חידון קצר, ואז מתרגלים אותו בשולחן אמיתי — עם מורה וירטואלי שמעיר בעדינות כשאפשר היה טוב יותר.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container" id="course-map"></div>
+</section>
+
+<footer class="site-footer"></footer>
+<script src="../js/bridge.js"></script>
+<script src="../js/quiz.js"></script>
+<script src="../js/course.js"></script>
+<script>
+(function(){
+  var p=Course.prog(), root=document.getElementById('course-map'), html='';
+  Course.PARTS.forEach(function(part){
+    html+='<div class="level-part"><h2>'+part.title+'</h2>';
+    if(!part.steps.length){ html+='<p class="notice">השלב ייפתח בהמשך — התוכן נבנה יחד עם נפתלי לפי תוכנית הלימודים המלאה.</p></div>'; return; }
+    html+='<ul class="step-list">';
+    part.steps.forEach(function(s,i){
+      var st=p[s.id]||{}, done=st.done;
+      html+='<li class="step-item'+(done?' done':'')+'"><a href="lesson.html?step='+s.id+'">'+
+        '<span class="step-num">'+(i+1)+'</span>'+
+        '<span><strong>'+s.title+'</strong><br><small>'+s.meet+(st.quiz?' · חידון: '+st.quiz:'')+'</small></span>'+
+        '<span class="step-check">'+(done?'✔️':'◻️')+'</span></a></li>';
+    });
+    html+='</ul></div>';
+  });
+  root.innerHTML=html;
+})();
+</script>
+<script src="../js/include.js" data-root="../"></script>
+</body>
+</html>

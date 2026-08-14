@@ -70,3 +70,4 @@ var Bridge = (function(){
           shape:shape,isBalanced:isBalanced,longestSuit:longestSuit,
           renderHand:renderHand,parseHand:parseHand};
 })();
+if(typeof module!=='undefined') module.exports=Bridge;
