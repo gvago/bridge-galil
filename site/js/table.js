@@ -100,6 +100,9 @@ var BridgeTable = (function(){
       T.dummy=(T.declarer+2)%4;
       T.phase='play';
       T.turn=(T.declarer+1)%4; /* מוביל = שמאלו של הכרוז */
+      /* ponytail: הסבר חד-פעמי כשהמשתמש כרוז — מלמד את כלל שתי הידיים במקום להפתיע */
+      if(T.declarer===T.userSeat) T.lastHint={kind:'info', best:null,
+        why:'אתה הכרוז! השותף פורש את הדומם ואתה מנהל את שתי הידיים — שלך ושלו. זה לב משחק הכרוז בברידג\': לתכנן את שתי הידיים כיחידה אחת. היד הפעילה מסומנת בזהב.'};
       render();
       setTimeout(nextIfBot,700);
       return;
@@ -236,7 +239,7 @@ var BridgeTable = (function(){
     var h=T.hands[seat], open = seat===T.userSeat || (T.phase!=='bid' && seat===T.dummy) || T.phase==='done';
     var canAct = T.phase==='play' && T.turn===seat && userControls(seat) && !T.busy;
     var legal = canAct ? legalCards(seat) : [];
-    var html='<div class="tbl-hand'+(open?'':' closed')+'" data-seat="'+seat+'">';
+    var html='<div class="tbl-hand'+(open?'':' closed')+(canAct?' active':'')+'" data-seat="'+seat+'">';
     if(!open){
       var n=h.S.length+h.H.length+h.D.length+h.C.length;
       for(var i=0;i<n;i++) html+='<span class="tc back"></span>';
@@ -245,7 +248,7 @@ var BridgeTable = (function(){
         h[s].forEach(function(r){
           var c=s+r, ok=legal.indexOf(c)>=0;
           html+='<button class="tc face '+(s==='H'||s==='D'?'red':'blk')+(ok?' playable':'')+'"'+
-            (ok?' data-card="'+c+'"':' disabled')+'>'+SUIT_SYM[s]+'<b>'+(RANK_DISP[r]||r)+'</b></button>';
+            (ok?' data-card="'+c+'"':' disabled')+'><b>'+(RANK_DISP[r]||r)+'</b><span class="s">'+SUIT_SYM[s]+'</span></button>';
         });
       });
     }
@@ -258,9 +261,11 @@ var BridgeTable = (function(){
     html+='<div class="tbl-status">';
     if(T.phase==='bid') html+= T.turn===T.userSeat?'<strong>תורך להכריז</strong>':'תור '+SEAT_HE[SEATS[T.turn]]+'...';
     else if(T.phase==='play'){
-      html+='חוזה: '+bidHe(T.contract)+' · כרוז: '+SEAT_HE[SEATS[T.declarer]]+
-        ' · <span dir="ltr">NS '+T.tricksNS+' — EW '+T.tricksEW+'</span>';
-      html+= '<br>'+(userControls(T.turn)&&!T.busy?'<strong>תורך לשחק'+(T.turn===T.dummy?' (מהדומם)':'')+'</strong>':'תור '+SEAT_HE[SEATS[T.turn]]+'...');
+      html+='<span class="chip">'+bidHe(T.contract)+'</span> כרוז: '+SEAT_HE[SEATS[T.declarer]]+
+        ' <span class="chip" dir="ltr">'+T.tricksNS+' : '+T.tricksEW+'</span>';
+      var who = userControls(T.turn)&&!T.busy ? '<strong>תורך לשחק'+(T.turn===T.dummy?' — מהדומם (אתה מנהל את שתי הידיים)':'')+'</strong>'
+                                              : 'תור '+SEAT_HE[SEATS[T.turn]]+'...';
+      html+='<br>'+who;
     } else if(T.result && T.result.passed) html+='<strong>כולם עברו — אין משחק.</strong>';
     else if(T.result) html+='<strong>'+(T.result.made?'החוזה בוצע! ':'החוזה נפל. ')+'</strong> לקחת '+T.result.got+' מתוך '+T.result.need+' נדרשות.';
     html+='</div>';
@@ -278,9 +283,12 @@ var BridgeTable = (function(){
     if(T.phase==='bid' && T.turn===T.userSeat) html+=bidBoxHTML();
 
     /* רמז/משוב */
-    if(T.lastHint) html+='<div class="tbl-hint">💡 אפשר היה טוב יותר: '+
-      (T.lastHint.kind==='bid'?'ההכרזה המומלצת היא '+bidHe(T.lastHint.best)+'. ':'הקלף המומלץ: '+disp(T.lastHint.best)+'. ')+
-      T.lastHint.why+'</div>';
+    if(T.lastHint){
+      if(T.lastHint.kind==='info') html+='<div class="tbl-hint">🃏 '+T.lastHint.why+'</div>';
+      else html+='<div class="tbl-hint">💡 אפשר היה טוב יותר: '+
+        (T.lastHint.kind==='bid'?'ההכרזה המומלצת היא '+bidHe(T.lastHint.best)+'. ':'הקלף המומלץ: '+disp(T.lastHint.best)+'. ')+
+        T.lastHint.why+'</div>';
+    }
 
     if(T.phase==='done') html+=doneHTML();
     html+='</div>';
@@ -298,7 +306,8 @@ var BridgeTable = (function(){
     var tag=seat===T.userSeat?' (אתה)':(T.phase!=='bid'&&seat===T.dummy?' (דומם)':'');
     var bids=T.auction.filter(function(a){return a.seat===seat;});
     var lastB=T.phase==='bid'&&bids.length?' · '+bidHe(bids[bids.length-1].bid):'';
-    return SEAT_HE[SEATS[seat]]+tag+lastB;
+    var isTurn=T.phase!=='done'&&T.turn===seat;
+    return '<span class="'+(isTurn?'turn-on':'')+'">'+(isTurn?'<span class="turn-dot"></span>':'')+SEAT_HE[SEATS[seat]]+tag+lastB+'</span>';
   }
   function centerHTML(){
     if(T.phase==='bid'){
@@ -307,10 +316,11 @@ var BridgeTable = (function(){
       return '<div class="au-log">'+(rows||'המכרז מתחיל...')+'</div>';
     }
     var cards=T.trick.map(function(t){return '<div class="ct-card ct-'+SEATS[t.seat]+'">'+disp(t.card)+'</div>';}).join('');
-    return '<div class="ct-area">'+cards+'</div>';
+    var pips='<div class="trick-pips">'+'●'.repeat(T.played)+'○'.repeat(13-T.played)+'</div>';
+    return '<div class="ct-area">'+cards+'</div>'+pips;
   }
   function bidBoxHTML(){
-    var html='<div class="bidbox"><div class="bb-row">';
+    var html='<div class="bidbox"><div class="bb-title">בחר הכרזה</div><div class="bb-row">';
     var last=null; T.auction.forEach(function(a){if(a.bid!=='P')last=a.bid;});
     for(var l=1;l<=7;l++){
       ['C','D','H','S','NT'].forEach(function(st){
