@@ -25,6 +25,9 @@
 <script src="../js/bidder.js"></script>
 <script src="../js/table.js"></script>
 <script src="../js/course.js"></script>
+<script src="../js/course-p1x.js"></script>
+<script src="../js/course-p2.js"></script>
+<script src="../js/course-p34.js"></script>
 <script>
 (function(){
   var id=new URLSearchParams(location.search).get('step')||'1.1';
@@ -58,6 +61,7 @@
       '<div id="tbl"></div><div class="lesson-nav" id="pnav"></div>';
     var deal = s.practice.gen==='random' ? null : Course.G[s.practice.gen]();
     BridgeTable.start({el:'tbl', deal:deal, dealer:s.practice.dealer, userSeat:2,
+      gradeBids: s.practice.gradeBids!==false,
       onDone:function(r){
         Course.markDone(id);
         var nav=document.getElementById('pnav');

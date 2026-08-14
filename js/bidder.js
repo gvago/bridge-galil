@@ -28,10 +28,17 @@ var Bidder = (function(){
 
   function opening(hand){
     var p = Bridge.hcp(hand);
-    if(p >= 15 && p <= 17 && Bridge.isBalanced(hand))
-      return {bid:'1NT', why:'יד מאוזנת עם 15-17 נקודות: פתיחת 1NT מתארת את היד במדויק (מפגש 6).'};
+    if(p >= 22) return {bid:'2C', why:'22+ נק\': פתיחת 2♣ מלאכותית ומחייבת — היד החזקה במשחק (מפגש 16).'};
     if(p >= 20 && p <= 21 && Bridge.isBalanced(hand))
       return {bid:'2NT', why:'יד מאוזנת חזקה מאוד (20-21 נק\'): פתיחת 2NT.'};
+    if(p >= 15 && p <= 17 && Bridge.isBalanced(hand))
+      return {bid:'1NT', why:'יד מאוזנת עם 15-17 נקודות: פתיחת 1NT מתארת את היד במדויק (מפגש 6).'};
+    if(p >= 6 && p <= 10){
+      var seven=null; ['S','H','D','C'].forEach(function(s){ if(!seven && hand[s].length>=7) seven=s; });
+      if(seven) return {bid:'3'+seven, why:'סדרה שביעייה ויד חלשה: פתיחת מנע בגובה 3 — גוזלת מרחב הכרזה מהיריבים (מפגש 14).'};
+      var six=null; ['S','H','D'].forEach(function(s){ if(!six && hand[s].length===6) six=s; });
+      if(six) return {bid:'2'+six, why:'שישייה בדיוק ו-6-10 נק\': פתיחה חלשה בגובה 2 (מפגש 15).'};
+    }
     if(p < 12) return {bid:'P', why:'עם פחות מ-12 נקודות אין פתיחה (מפגש 3).'};
     var s=suitLen(hand,'S'), h=suitLen(hand,'H'), d=suitLen(hand,'D'), c=suitLen(hand,'C');
     if(s>=5 && s>=h) return {bid:'1S', why:'12+ נק\' וחמישייה בספייד: פותחים בסדרת המייג\'ור הארוכה (מפגש 3).'};
@@ -43,12 +50,28 @@ var Bidder = (function(){
   /* תגובות לפתיחת שותף */
   function respond(hand, openBid, last){
     var p = Bridge.hcp(hand), o = parse(openBid);
+    /* פתיחות מיוחדות בגובה 2-3 */
+    if(o.st==='C' && o.lvl===2)
+      return {bid:'2D', why:'מול 2♣ החזק: 2♦ תשובה אוטומטית (Waiting) — הפותח יתאר את ידו (מפגש 16).'};
+    if(o.lvl===2 && o.st!=='NT'){ /* Weak Two */
+      if(p>=15 && higher('2NT',last)) return {bid:'2NT', why:'מול פתיחה חלשה: 2NT שואל את הפותח על עוצמה (מפגש 15).'};
+      if(suitLen(hand,o.st)>=3 && p>=8 && higher('3'+o.st,last)) return {bid:'3'+o.st, why:'העלאה חסומה: ממשיכים את ההפרעה עם התאמה (מפגש 15).'};
+      return {bid:'P', why:'מול פתיחה חלשה, בלי יד חזקה או התאמה — עבור (מפגש 15).'};
+    }
+    if(o.lvl>=3) return p>=16 && suitLen(hand,o.st)>=2 && higher('4'+o.st,last)
+      ? {bid:'4'+o.st, why:'מול פתיחת מנע: יד חזקה מאוד משלימה לגיים.'}
+      : {bid:'P', why:'מול פתיחת מנע של השותף כמעט תמיד עוברים — היד שלו חלשה (מפגש 14).'};
     if(o.st==='NT' && o.lvl>=2){
       if(o.lvl>=3) return {bid:'P', why:'הפותח כבר בגיים: עבור.'};
       if(p>=5) return {bid:'3NT', why:'מול 2NT (20-21) מספיקות 5 נק\' לגיים: 3NT.'};
       return {bid:'P', why:'יד חלשה מדי גם מול 2NT: עבור.'};
     }
     if(o.st==='NT' && o.lvl===1){
+      /* ג'קובי טרנספר לפני סטיימן: חמישייה במייג'ור */
+      if(suitLen(hand,'H')>=5 && higher('2D',last))
+        return {bid:'2D', why:'ג\'קובי טרנספר: 2♦ מורה לפותח להכריז 2♥ — החוזה ישוחק מהיד החזקה (מפגש 11).'};
+      if(suitLen(hand,'S')>=5 && higher('2H',last))
+        return {bid:'2H', why:'ג\'קובי טרנספר: 2♥ מורה לפותח להכריז 2♠ (מפגש 11).'};
       var m4 = suitLen(hand,'H')>=4 ? 'H' : (suitLen(hand,'S')>=4 ? 'S' : null);
       if(p>=8 && m4 && higher('2C',last))
         return {bid:'2C', why:'8+ נק\' ורביעייה במייג\'ור: סטיימן 2♣ — שואלים את הפותח אם יש לו רביעייה (מפגש 7).'};
@@ -90,6 +113,18 @@ var Bidder = (function(){
     var p = Bridge.hcp(hand) + Bridge.distPoints(hand);
     var my = parse(c.me[0]), pr = parse(c.partner[c.partner.length-1]), last=c.last;
     if(!pr) return {bid:'P', why:'השותף עבר: אין סיבה להמשיך עם יד רגילה.'};
+    /* אחרי פתיחת 2♣: תיאור היד */
+    if(my.st==='C' && my.lvl===2){
+      if(Bridge.isBalanced(hand)){ var nb2=minBid('NT',last); if(nb2) return {bid:nb2, why:'2♣ ואז NT: יד עצומה מאוזנת (מפגש 16).'}; }
+      var lg=Bridge.longestSuit(hand); var lb=minBid(lg,last);
+      if(lb) return {bid:lb, why:'2♣ ואז הסדרה האמיתית: יד עצומה לא מאוזנת (מפגש 16).'};
+    }
+    /* השלמת ג'קובי טרנספר */
+    if(my.st==='NT' && my.lvl===1 && pr.lvl===2 && (pr.st==='D'||pr.st==='H')){
+      var target = pr.st==='D' ? 'H' : 'S';
+      var tb=minBid(target,last);
+      if(tb) return {bid:tb, why:'השלמת הטרנספר: מכריזים את המייג\'ור שהשותף הראה (מפגש 11).'};
+    }
     /* תשובה לסטיימן */
     if(my.st==='NT' && my.lvl===1 && pr.lvl===2 && pr.st==='C'){
       if(suitLen(hand,'H')>=4) return {bid:'2H', why:'תשובה לסטיימן: יש רביעייה בהארט (מפגש 7).'};
@@ -124,6 +159,15 @@ var Bidder = (function(){
     var pr = parse(c.partner[c.partner.length-1]), my=parse(c.me[0]), last=c.last;
     if(!pr) return {bid:'P', why:'עבור.'};
     if(pr.lvl>=4 || (pr.st==='NT'&&pr.lvl>=3)) return {bid:'P', why:'הגיים הוכרז: עבור.'};
+    /* אחרי טרנספר שהושלם: החלטת גובה לפי כוח */
+    if(my && my.lvl===2 && (my.st==='D'||my.st==='H') && c.partner[0] && parse(c.partner[0]).st==='NT' && c.me.length===1){
+      var maj = my.st==='D' ? 'H' : 'S';
+      if(pr.st===maj){
+        if(p>=10 && higher('4'+maj,last)) return {bid:'4'+maj, why:'אחרי הטרנספר: עם כוח לגיים מכריזים 4 במייג\'ור (מפגש 11).'};
+        if(p>=8 && higher('3'+maj,last)) return {bid:'3'+maj, why:'אחרי הטרנספר: 8-9 נק\' — הזמנה (מפגש 11).'};
+        return {bid:'P', why:'יד חלשה: הטרנספר הסתיים, עוצרים בגובה 2 (מפגש 11).'};
+      }
+    }
     /* אחרי סטיימן */
     if(my && my.lvl===2 && my.st==='C' && c.me.length===1){
       var m = pr.st;

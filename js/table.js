@@ -45,6 +45,7 @@ var BridgeTable = (function(){
       hands:hands, userSeat:(cfg.userSeat!=null?cfg.userSeat:2),
       dealer:(cfg.dealer!=null?cfg.dealer:2),
       scenario:cfg.scenario||null, onDone:cfg.onDone||null,
+      gradeBids:cfg.gradeBids!==false,
       phase:'bid', auction:[], turn:null,
       contract:null, declarer:null, dummy:null, trump:null,
       trick:[], tricksNS:0, tricksEW:0, played:0, ledger:[],
@@ -72,12 +73,14 @@ var BridgeTable = (function(){
   }
   function userBid(bid){
     if(T.phase!=='bid'||T.turn!==T.userSeat||!legalBid(bid)) return;
-    /* משוב: מה המנוע היה מכריז */
-    var best=Bidder.suggest(T.hands[T.userSeat], T.auction, T.userSeat);
+    /* משוב: מה המנוע היה מכריז. gradeBids=false בשיעורי קונבנציות שהמנוע לא מכיר */
     var fb=null;
-    if(best.bid!==bid){
-      fb={kind:'bid', chose:bid, best:best.bid, why:best.why};
-      T.mistakes.push(fb);
+    if(T.gradeBids){
+      var best=Bidder.suggest(T.hands[T.userSeat], T.auction, T.userSeat);
+      if(best.bid!==bid){
+        fb={kind:'bid', chose:bid, best:best.bid, why:best.why};
+        T.mistakes.push(fb);
+      }
     }
     applyBid(bid, fb);
   }
