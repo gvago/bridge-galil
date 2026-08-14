@@ -337,3 +337,12 @@ body.has-mobile-cta{padding-bottom:0}
 .step-check{margin-inline-start:auto;font-size:1.2rem}
 .lesson-nav{display:flex;justify-content:space-between;gap:12px;margin-top:26px;flex-wrap:wrap}
 .phase-tag{display:inline-block;background:var(--cream);border:1px solid var(--gold);color:var(--green-dark);border-radius:999px;padding:3px 14px;font-size:.9rem;font-weight:700;margin-bottom:10px}
+
+/* עצירת ביניים — משוב על השולחן */
+.tbl-overlay{position:absolute;inset:0;background:rgba(15,44,34,.72);border-radius:12px;display:flex;align-items:center;justify-content:center;z-index:20;padding:18px;animation:playIn .25s ease-out}
+.tbl-overlay-box{background:#FFFDF6;border-radius:14px;padding:24px 22px;max-width:440px;box-shadow:0 18px 50px rgba(0,0,0,.5);border-top:5px solid var(--gold);text-align:right}
+.ov-title{font-weight:800;font-size:1.15rem;color:var(--green-dark);margin-bottom:10px}
+.tbl-overlay-box p{margin-bottom:12px;line-height:1.65}
+.ov-note{font-size:.88rem;color:var(--ink-soft)}
+.tbl-overlay-box .btn{width:100%;text-align:center}
+@media(max-width:640px){.tbl-overlay{padding:10px}.tbl-overlay-box{padding:18px 16px}}
