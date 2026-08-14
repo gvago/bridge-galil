@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>שיעור | מסלול הלימוד | ברידג' גליל</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=Assistant:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/main.css">
+</head>
+<body data-page="practice">
+<header class="site-header"></header>
+
+<section class="section">
+<div class="container">
+  <div class="breadcrumbs"><a href="course.html">מסלול הלימוד</a> ← <span id="bc"></span></div>
+  <div id="stage"></div>
+</div>
+</section>
+
+<footer class="site-footer"></footer>
+<script src="../js/bridge.js"></script>
+<script src="../js/quiz.js"></script>
+<script src="../js/bidder.js"></script>
+<script src="../js/table.js"></script>
+<script src="../js/course.js"></script>
+<script>
+(function(){
+  var id=new URLSearchParams(location.search).get('step')||'1.1';
+  var f=Course.findStep(id);
+  var stage=document.getElementById('stage');
+  if(!f){ stage.innerHTML='<p class="notice">השלב לא נמצא. <a href="course.html">חזרה למסלול</a></p>'; return; }
+  var s=f.step;
+  document.getElementById('bc').textContent=s.title;
+  document.title=s.title+' | ברידג\' גליל';
+
+  function theory(){
+    var html='<article class="article"><span class="phase-tag">שלב 1 מתוך 3 · תיאוריה</span>'+
+      '<h1>'+s.title+'</h1><p class="lead">'+s.meet+' בתוכנית הלימודים</p>'+
+      s.theory.join('')+
+      '<div class="lesson-nav"><span></span><button class="btn btn-gold" id="to-quiz">הבנתי — לחידון ←</button></div></article>';
+    stage.innerHTML=html;
+    document.getElementById('to-quiz').addEventListener('click',quiz);
+    window.scrollTo(0,0);
+  }
+  function quiz(){
+    stage.innerHTML='<span class="phase-tag">שלב 2 מתוך 3 · חידון</span><div class="quiz-box" id="lq"></div>';
+    Course.runQuiz('lq', s.quiz, function(score,total){
+      Course.markQuiz(id,score,total);
+      practice();
+    });
+    window.scrollTo(0,0);
+  }
+  function practice(){
+    stage.innerHTML='<span class="phase-tag">שלב 3 מתוך 3 · תרגול בשולחן</span>'+
+      '<p class="section-sub" style="margin-bottom:18px">'+s.practice.intro+'</p>'+
+      '<div id="tbl"></div><div class="lesson-nav" id="pnav"></div>';
+    var deal = s.practice.gen==='random' ? null : Course.G[s.practice.gen]();
+    BridgeTable.start({el:'tbl', deal:deal, dealer:s.practice.dealer, userSeat:2,
+      onDone:function(r){
+        Course.markDone(id);
+        var nav=document.getElementById('pnav');
+        nav.innerHTML='<button class="btn btn-green" id="again">עוד חלוקה כזו 🔁</button>'+
+          (f.next?'<a class="btn btn-gold" href="lesson.html?step='+f.next.id+'">לשלב הבא: '+f.next.title+' ←</a>'
+                 :'<a class="btn btn-gold" href="course.html">חזרה למסלול ←</a>');
+        document.getElementById('again').addEventListener('click',practice);
+      }});
+    window.scrollTo(0,0);
+  }
+  theory();
+})();
+</script>
+<script src="../js/include.js" data-root="../"></script>
+</body>
+</html>

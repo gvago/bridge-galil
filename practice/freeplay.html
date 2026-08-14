@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>משחק חופשי: יד מלאה מול המחשב | ברידג' גליל</title>
+<meta name="description" content="שחקו יד ברידג' שלמה בדפדפן: מכרז מלא מול מכריז חכם, משחק קלף-קלף מול מנוע Double-Dummy, ומשוב מנומק על כל החלטה. חינם ובעברית.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=Assistant:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/main.css">
+</head>
+<body data-page="practice">
+<header class="site-header"></header>
+
+<section class="section">
+  <div class="container">
+    <h1 class="section-title">משחק חופשי</h1>
+    <p class="section-sub">חלוקה אקראית, מכרז אמיתי, משחק מלא — כמו בשולחן. שלושת המושבים האחרים משוחקים על ידי המחשב: הכרזות לפי השיטה הטבעית שנלמדת באתר, ומשחק קלפים ברמת מנוע. טעיתם? תקבלו הערה עדינה והסבר.</p>
+    <div id="tbl"></div>
+  </div>
+</section>
+
+<footer class="site-footer"></footer>
+<script src="../js/bridge.js"></script>
+<script src="../js/bidder.js"></script>
+<script src="../js/table.js"></script>
+<script>BridgeTable.start({el:'tbl', dealer:Math.floor(Math.random()*4), userSeat:2});</script>
+<script src="../js/include.js" data-root="../"></script>
+</body>
+</html>
