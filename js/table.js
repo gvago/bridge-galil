@@ -241,8 +241,9 @@ var BridgeTable = (function(){
     var legal = canAct ? legalCards(seat) : [];
     var html='<div class="tbl-hand'+(open?'':' closed')+(canAct?' active':'')+'" data-seat="'+seat+'">';
     if(!open){
+      /* ponytail: יד סגורה = גב קלף אחד + מונה. 13 גבים מוערמים = גובה מבוזבז במובייל */
       var n=h.S.length+h.H.length+h.D.length+h.C.length;
-      for(var i=0;i<n;i++) html+='<span class="tc back"></span>';
+      html+='<span class="tc back"></span><span class="closed-count">'+n+'</span>';
     } else {
       ['S','H','D','C'].forEach(function(s){
         h[s].forEach(function(r){
@@ -298,8 +299,11 @@ var BridgeTable = (function(){
     el.querySelectorAll('.tc.playable').forEach(function(b){
       b.addEventListener('click',function(){userPlay(b.dataset.card);});
     });
-    el.querySelectorAll('.bb-bid').forEach(function(b){
+    el.querySelectorAll('.bb-bid[data-bid]').forEach(function(b){
       b.addEventListener('click',function(){userBid(b.dataset.bid);});
+    });
+    el.querySelectorAll('.bb-lvl').forEach(function(b){
+      b.addEventListener('click',function(){T.bidLvl=+b.dataset.lvl;render();});
     });
   }
   function seatLabel(seat){
@@ -320,14 +324,20 @@ var BridgeTable = (function(){
     return '<div class="ct-area">'+cards+'</div>'+pips;
   }
   function bidBoxHTML(){
-    var html='<div class="bidbox"><div class="bb-title">בחר הכרזה</div><div class="bb-row">';
+    /* ponytail: קופסה דו-שלבית (גובה→סדרה) — 2 שורות במקום 7; סטנדרט מובייל */
     var last=null; T.auction.forEach(function(a){if(a.bid!=='P')last=a.bid;});
+    var lvls=[]; for(var l=1;l<=7;l++){ if(['C','D','H','S','NT'].some(function(st){return Bidder.higher(l+st,last);})) lvls.push(l); }
+    if(T.bidLvl==null || lvls.indexOf(T.bidLvl)<0) T.bidLvl=lvls[0];
+    var html='<div class="bidbox"><div class="bb-title">בחר הכרזה: גובה, ואז סדרה</div><div class="bb-row bb-lvls">';
     for(var l=1;l<=7;l++){
-      ['C','D','H','S','NT'].forEach(function(st){
-        var b=l+st, on=Bidder.higher(b,last);
-        html+='<button class="bb-bid'+(st==='H'||st==='D'?' red':'')+'" data-bid="'+b+'"'+(on?'':' disabled')+'>'+l+(st==='NT'?'NT':SUIT_SYM[st])+'</button>';
-      });
+      var on=lvls.indexOf(l)>=0;
+      html+='<button class="bb-bid bb-lvl'+(l===T.bidLvl?' sel':'')+'" data-lvl="'+l+'"'+(on?'':' disabled')+'>'+l+'</button>';
     }
+    html+='</div><div class="bb-row bb-strains">';
+    ['C','D','H','S','NT'].forEach(function(st){
+      var b=T.bidLvl+st, on=Bidder.higher(b,last);
+      html+='<button class="bb-bid'+(st==='H'||st==='D'?' red':'')+'" data-bid="'+b+'"'+(on?'':' disabled')+'>'+T.bidLvl+(st==='NT'?'NT':SUIT_SYM[st])+'</button>';
+    });
     html+='</div><button class="bb-bid bb-pass" data-bid="P">עבור</button></div>';
     return html;
   }
