@@ -349,4 +349,4 @@ body.has-mobile-cta{padding-bottom:0}
 
 /* בחירת קלף במגע: לחיצה מרימה ומגדילה, גרירה מחליפה, שחרור בוחר */
 .tc.face{transition:transform .12s ease-out;touch-action:none}
-.tc.lifted{transform:translateY(-26px) scale(1.9);z-index:30;box-shadow:0 10px 24px rgba(0,0,0,.45);position:relative}
+.tc.face.playable.lifted,.tc.face.playable.lifted:hover{transform:translateY(-30px) scale(1.9);z-index:30;box-shadow:0 10px 24px rgba(0,0,0,.45)}
