@@ -62,6 +62,7 @@
     var deal = s.practice.gen==='random' ? null : Course.G[s.practice.gen]();
     BridgeTable.start({el:'tbl', deal:deal, dealer:s.practice.dealer, userSeat:2,
       gradeBids: s.practice.gradeBids!==false,
+      onRetry: practice,
       onDone:function(r){
         Course.markDone(id);
         var nav=document.getElementById('pnav');

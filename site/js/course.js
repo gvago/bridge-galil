@@ -149,14 +149,30 @@ var Course = (function(){
   function runQuiz(el, cfg, onFinish){
     var box=document.getElementById(el), i=0, score=0;
     var total = cfg.fixed ? cfg.fixed.length : cfg.n;
+    /* ponytail: בחידון קבוע "שאלות אחרות" = ערבוב סדר השאלות והתשובות; במחולל — שאלות חדשות באמת */
+    var fixed = cfg.fixed ? cfg.fixed.slice() : null;
+    function reshuffle(){
+      if(!fixed) return;
+      fixed.sort(function(){return Math.random()-.5;});
+      fixed = fixed.map(function(q){
+        var order=q.opts.map(function(_,k){return k;}).sort(function(){return Math.random()-.5;});
+        return {q:q.q, handStr:q.handStr, explain:q.explain,
+                opts:order.map(function(k){return q.opts[k];}),
+                correct:order.indexOf(q.correct)};
+      });
+    }
     function next(){
       if(i>=total){
         box.innerHTML='<div class="quiz-q">סיימתם את החידון: '+score+' מתוך '+total+' ✔️</div>'+
-          '<div class="quiz-next"><button class="btn btn-gold" id="qz-go">המשך לתרגול המעשי ←</button></div>';
+          '<div class="quiz-next"><button class="btn btn-gold" id="qz-go">המשך לתרגול המעשי ←</button> '+
+          '<button class="btn" id="qz-retry">🔄 נסה שוב</button></div>';
         document.getElementById('qz-go').addEventListener('click',function(){ onFinish(score,total); });
+        document.getElementById('qz-retry').addEventListener('click',function(){
+          i=0; score=0; reshuffle(); next();
+        });
         return;
       }
-      var cur = cfg.fixed ? cfg.fixed[i] : (cfg.gen==='hcp'?Quiz.genHcpQuestion():Quiz.genOpeningQuestion());
+      var cur = fixed ? fixed[i] : (cfg.gen==='hcp'?Quiz.genHcpQuestion():Quiz.genOpeningQuestion());
       i++;
       var html='';
       if(cur.handStr) html+='<div id="qz-hand"></div>';

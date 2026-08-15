@@ -36,9 +36,10 @@ var BridgeTable = (function(){
   }
 
   /* ---------- state ---------- */
-  var T=null;
+  var T=null, lastCfg=null;
 
   function start(cfg){
+    lastCfg=cfg;
     var hands = cfg.deal ? cfg.deal.map(function(s){return Bridge.parseHand(s);}) : fullDeal();
     T={
       el:document.getElementById(cfg.el),
@@ -311,6 +312,8 @@ var BridgeTable = (function(){
       T.pauseHint=null; render();
       setTimeout(function(){ if(T.phase==='bid'){ if(T.turn!==T.userSeat) botBid(); } else nextIfBot(); },300);
     });
+    var again=document.getElementById('tbl-again');
+    if(again) again.addEventListener('click',retry);
     el.querySelectorAll('.tc.playable').forEach(function(b){
       b.addEventListener('click',function(){userPlay(b.dataset.card);});
     });
@@ -400,9 +403,14 @@ var BridgeTable = (function(){
       });
       h+='</ul>';
     }
-    h+='<button class="btn btn-green" onclick="location.reload()">חלוקה חדשה</button></div>';
+    h+='<button class="btn btn-green" id="tbl-again">חלוקה חדשה 🔁</button></div>';
     return h;
   }
+  /* ponytail: ניסיון חוזר בלי reload — שיעור מעביר onRetry שמחולל חלוקה חדשה מאותו תרחיש */
+  function retry(){
+    if(lastCfg && lastCfg.onRetry) lastCfg.onRetry();
+    else if(lastCfg){ lastCfg.deal=null; start(lastCfg); }
+  }
 
-  return {start:start};
+  return {start:start, retry:retry};
 })();
