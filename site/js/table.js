@@ -314,6 +314,40 @@ var BridgeTable = (function(){
     el.querySelectorAll('.tc.playable').forEach(function(b){
       b.addEventListener('click',function(){userPlay(b.dataset.card);});
     });
+    /* מובייל: לחיצה ארוכה מגדילה, גרירה מחליפה קלף, שחרור = בחירה.
+       שחרור מחוץ לקלפים = ביטול (אין צורך בכפתור ביטול). */
+    el.querySelectorAll('.tbl-hand.active').forEach(function(hand){
+      var lifted=null;
+      function liftAt(x,y){
+        var t=document.elementFromPoint(x,y);
+        var c=t&&t.closest?t.closest('.tc.playable'):null;
+        if(c!==lifted){
+          if(lifted) lifted.classList.remove('lifted');
+          lifted=c;
+          if(lifted) lifted.classList.add('lifted');
+        }
+      }
+      hand.addEventListener('touchstart',function(e){
+        if(!e.target.closest('.tc.playable')) return;
+        e.preventDefault();
+        liftAt(e.touches[0].clientX,e.touches[0].clientY);
+      },{passive:false});
+      hand.addEventListener('touchmove',function(e){
+        if(!lifted && !e.target.closest('.tc.playable')) return;
+        e.preventDefault();
+        liftAt(e.touches[0].clientX,e.touches[0].clientY);
+      },{passive:false});
+      hand.addEventListener('touchend',function(e){
+        if(!lifted) return;
+        e.preventDefault();
+        var card=lifted.dataset.card;
+        lifted.classList.remove('lifted'); lifted=null;
+        userPlay(card);
+      });
+      hand.addEventListener('touchcancel',function(){
+        if(lifted){ lifted.classList.remove('lifted'); lifted=null; }
+      });
+    });
     el.querySelectorAll('.bb-bid[data-bid]').forEach(function(b){
       b.addEventListener('click',function(){userBid(b.dataset.bid);});
     });

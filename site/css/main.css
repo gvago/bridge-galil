@@ -346,3 +346,7 @@ body.has-mobile-cta{padding-bottom:0}
 .ov-note{font-size:.88rem;color:var(--ink-soft)}
 .tbl-overlay-box .btn{width:100%;text-align:center}
 @media(max-width:640px){.tbl-overlay{padding:10px}.tbl-overlay-box{padding:18px 16px}}
+
+/* בחירת קלף במגע: לחיצה מרימה ומגדילה, גרירה מחליפה, שחרור בוחר */
+.tc.face{transition:transform .12s ease-out;touch-action:none}
+.tc.lifted{transform:translateY(-26px) scale(1.9);z-index:30;box-shadow:0 10px 24px rgba(0,0,0,.45);position:relative}
