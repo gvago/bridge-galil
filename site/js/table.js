@@ -50,7 +50,7 @@ var BridgeTable = (function(){
       phase:'bid', auction:[], turn:null,
       contract:null, declarer:null, dummy:null, trump:null,
       trick:[], tricksNS:0, tricksEW:0, played:0, ledger:[],
-      mistakes:[], lastHint:null, pauseHint:null, busy:false
+      mistakes:[], lastHint:null, pauseHint:null, pendingFinish:false, busy:false
     };
     T.turn=T.dealer;
     render();
@@ -201,12 +201,23 @@ var BridgeTable = (function(){
     if(feedback) T.pauseHint=feedback; else if(userControls(seat)) T.lastHint=null;
     if(T.trick.length===4){
       var winner=trickWinner();
-      if(winner%2===0)T.tricksNS++; else T.tricksEW++;
-      T.ledger.push(T.trick.slice());
-      T.trick=[];
-      T.played++;
-      T.turn=winner;
-      if(T.played===13){ finish(); return; }
+      T.busy=true;
+      render();
+      setTimeout(function(){
+        if(winner%2===0)T.tricksNS++; else T.tricksEW++;
+        T.ledger.push(T.trick.slice());
+        T.trick=[];
+        T.played++;
+        T.turn=winner;
+        T.busy=false;
+        if(T.played===13){
+          if(T.pauseHint){ T.pendingFinish=true; render(); return; }
+          finish(); return;
+        }
+        render();
+        setTimeout(nextIfBot,650);
+      },900);
+      return;
     } else {
       T.turn=(T.turn+1)%4;
     }
@@ -235,6 +246,12 @@ var BridgeTable = (function(){
     render();
     if(T.onDone) T.onDone({contract:T.contract, declarer:T.declarer, made:T.result.made,
       got:got, need:need, mistakes:T.mistakes});
+  }
+  function dismissFeedback(){
+    T.pauseHint=null;
+    if(T.pendingFinish){ T.pendingFinish=false; finish(); return; }
+    render();
+    setTimeout(function(){ if(T.phase==='bid'){ if(T.turn!==T.userSeat) botBid(); } else nextIfBot(); },300);
   }
 
   /* ---------- render ---------- */
@@ -308,10 +325,7 @@ var BridgeTable = (function(){
 
     /* wiring */
     var ok=document.getElementById('ov-ok');
-    if(ok) ok.addEventListener('click',function(){
-      T.pauseHint=null; render();
-      setTimeout(function(){ if(T.phase==='bid'){ if(T.turn!==T.userSeat) botBid(); } else nextIfBot(); },300);
-    });
+    if(ok) ok.addEventListener('click',dismissFeedback);
     var again=document.getElementById('tbl-again');
     if(again) again.addEventListener('click',retry);
     el.querySelectorAll('.tc.playable').forEach(function(b){
