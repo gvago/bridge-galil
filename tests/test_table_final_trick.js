@@ -60,7 +60,41 @@ function runCase(startingTricks, expectedMade, feedback){
   assert(done,'onDone must run after the reveal');
 }
 
+function completedTrickStaysUntilNextLead(){
+  var timers=[];
+  var el={innerHTML:'', querySelectorAll:function(){return [];}};
+  var sandbox={
+    module:{exports:{}}, exports:{}, Bridge:global.Bridge, Bidder:global.Bidder,
+    document:{getElementById:function(){return null;}, elementFromPoint:function(){return null;}},
+    window:{}, Promise:Promise,
+    setTimeout:function(fn){timers.push(fn); return timers.length;},
+    console:console
+  };
+  vm.runInNewContext(source, sandbox, {filename:'table.js'});
+  var table=sandbox.BridgeTable;
+  var state={
+    el:el, hands:[hand(['K']),hand(),hand(),hand(['4'])], userSeat:0, dealer:2,
+    scenario:null, onDone:null, gradeBids:false,
+    phase:'play', auction:[], turn:3, contract:'1S', declarer:0, dummy:2, trump:'S',
+    trick:[{seat:0,card:'SA'},{seat:1,card:'S2'},{seat:2,card:'S3'}],
+    tricksNS:0, tricksEW:0, played:0, ledger:[],
+    mistakes:[], lastHint:null, pauseHint:null, pendingFinish:false, busy:false, result:null
+  };
+  table.__test.setState(state);
+  table.__test.playCard(3,'S4',null);
+  timers.shift()();
+
+  state=table.__test.getState();
+  assert.strictEqual(state.trick.length,0,'completed trick must not be part of the next trick');
+  assert.strictEqual((el.innerHTML.match(/ct-card/g)||[]).length,4,'completed trick must stay visible while the next leader chooses');
+
+  table.__test.playCard(0,'SK',null);
+  assert.strictEqual((el.innerHTML.match(/ct-card/g)||[]).length,1,'first lead must replace the completed trick');
+  assert(el.innerHTML.indexOf('♠K')>=0,'the new lead must be visible');
+}
+
 runCase(9,true);
 runCase(8,false);
 runCase(9,true,{kind:'play',chose:'S4',best:'S5',trick:13,why:'test'});
-console.log('OK: final card stays visible before win, loss, and feedback results');
+completedTrickStaysUntilNextLead();
+console.log('OK: completed tricks stay visible through results and until the next lead');

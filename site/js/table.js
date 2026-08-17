@@ -385,7 +385,7 @@ var BridgeTable = (function(){
       var rows=T.auction.slice(-8).map(function(a){return '<span class="au-item">'+SHORT[SEATS[a.seat]]+': '+bidHe(a.bid)+'</span>';}).join(' ');
       return '<div class="au-log">'+(rows||'המכרז מתחיל...')+'</div>';
     }
-    var cards=T.trick.map(function(t){return '<div class="ct-card ct-'+SEATS[t.seat]+'">'+disp(t.card)+'</div>';}).join('');
+    var cards=(T.trick.length?T.trick:(T.ledger[T.ledger.length-1]||[])).map(function(t){return '<div class="ct-card ct-'+SEATS[t.seat]+'">'+disp(t.card)+'</div>';}).join('');
     var pips='<div class="trick-pips">'+'●'.repeat(T.played)+'○'.repeat(13-T.played)+'</div>';
     return '<div class="ct-area">'+cards+'</div>'+pips;
   }
